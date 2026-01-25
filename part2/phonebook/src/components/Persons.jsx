@@ -1,13 +1,16 @@
-import Person from './Person'
-
-
-const Persons = ({ persons, searchName }) => {
-  const filteredPersons = persons.filter(person => person.name.toLowerCase().includes(
-    searchName.toLowerCase()))
-
+const Persons = ({ persons, deletePerson }) => {
   return (
     <div>
-      {filteredPersons.map(person => <Person key={person.id} person={person} />)}
+      {persons.map(person => {
+        return (
+          <p key={person.id}>
+            {person.name} {person.number} <button
+            onClick={() => confirm(`Delete ${person.name}?`) && deletePerson(person)}>
+              delete
+            </button>
+          </p>
+        )
+      })}
     </div>
     )
 }
