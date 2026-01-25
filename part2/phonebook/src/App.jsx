@@ -3,6 +3,7 @@ import personService from './services/persons'
 import Filter from './components/Filter'
 import PersonForm from './components/PersonForm'
 import Persons from './components/Persons'
+import Notification from './components/Notification'
 
 
 const App = () => {
@@ -18,6 +19,8 @@ const App = () => {
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [searchName, setSearchName] = useState('')
+  const [notification, setNotification] = useState('')
+  const [notificationType, setNotificationType] = useState('')
 
   const handlePersonChange = event => setNewName(event.target.value)
   const handleNumberChange = event => setNewNumber(event.target.value)
@@ -38,6 +41,19 @@ const App = () => {
             setPersons(persons.map(person => person.name === newName ? updatedPerson : person))
             setNewName('')
             setNewNumber('')
+
+            setNotification(`Updated ${updatedPerson.name}`)
+            setTimeout(() => {
+              setNotification('')
+            }, 5000)
+          })
+          .catch(error => {
+            setNotification(`${existingPerson.name} was already deleted from the Phonebook`)
+            setNotificationType('error')
+            setTimeout(() => {
+              setNotification('')
+              setNotificationType('')
+            }, 5000)
           })
       return
     }
@@ -47,6 +63,11 @@ const App = () => {
         setPersons(persons.concat(returnedPerson))
         setNewName('')
         setNewNumber('')
+
+        setNotification(`Added ${returnedPerson.name}`)
+        setTimeout(() => {
+          setNotification('')
+        }, 5000)
       })
   }
 
@@ -54,12 +75,18 @@ const App = () => {
     personService.del(person.id)
       .then(deletedPerson => {
         setPersons(persons.filter(person => person.id !== deletedPerson.id))
+
+        setNotification(`Deleted ${deletedPerson.name}`)
+        setTimeout(() => {
+          setNotification('')
+        }, 5000)
       })
   }
 
   return (
     <div>
       <h1>Phonebook</h1>
+      <Notification message={notification} type={notificationType} />
       <Filter searchName={searchName} handleSearch={handleSearch} />
       <h2>add a new</h2>
       <PersonForm
