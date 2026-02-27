@@ -48,12 +48,28 @@ const App = () => {
             }, 5000)
           })
           .catch(error => {
-            setNotification(`${existingPerson.name} was already deleted from the Phonebook`)
-            setNotificationType('error')
-            setTimeout(() => {
-              setNotification('')
-              setNotificationType('')
-            }, 5000)
+            if (error.response.status === 404) {
+              setNotificationType('error')
+              setNotification(`${existingPerson.name} was already deleted from the Phonebook`)
+              setTimeout(() => {
+                setNotification('')
+                setNotificationType('')
+              }, 5000)
+            } else if (error.response.status === 400) {
+              setNotificationType('error')
+              setNotification(error.response.data.error)
+              setTimeout(() => {
+                setNotification('')
+                setNotificationType('')
+              }, 5000)
+            } else {
+              setNotificationType('error')
+              setNotification('Unexpected error!')
+              setTimeout(() => {
+                setNotification('')
+                setNotificationType('')
+              }, 5000)
+            }
           })
       return
     }
@@ -69,11 +85,19 @@ const App = () => {
           setNotification('')
         }, 5000)
       })
+      .catch(error => {
+        setNotificationType('error')
+        setNotification(error.response.data.error)
+        setTimeout(() => {
+          setNotification('')
+          setNotificationType('')
+        }, 5000)
+      })
   }
 
-  const deletePerson = person => {
-    personService.del(person.id)
-      .then(deletedPerson => {
+  const deletePerson = deletedPerson => {
+    personService.del(deletedPerson.id)
+      .then(response => {
         setPersons(persons.filter(person => person.id !== deletedPerson.id))
 
         setNotification(`Deleted ${deletedPerson.name}`)
