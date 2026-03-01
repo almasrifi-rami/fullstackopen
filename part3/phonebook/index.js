@@ -39,14 +39,14 @@ app.get('/api/persons/:id', (request, response, next) => {
 })
 
 app.get('/info', (request, response) => {
-  htmlResponse = `
+  const htmlResponse = `
     <p>Phonebook has info for ${Person.length} people<p>
     <p>${request.requestTime}<p>
   `
   response.send(htmlResponse)
 })
 
-app.delete('/api/persons/:id', (request, response) => {
+app.delete('/api/persons/:id', (request, response, next) => {
   const id = request.params.id
   Person.findByIdAndDelete(id)
     .then(result => {
