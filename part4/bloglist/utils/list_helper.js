@@ -23,11 +23,24 @@ const bestBlog = (blogs) => {
 const mostBlogs = (blogs) => {
   if (blogs.length === 0) {
     return null
-  } else {
-    const blogsByAuthor = _.countBy(blogs, (blog) => blog.author)
-    const [bestAuthor, nBlogs] = _.maxBy(Object.entries(blogsByAuthor), (obj) => obj[1])
-    return { [bestAuthor]: nBlogs }
   }
+  const blogsByAuthor = _.countBy(blogs, 'author')
+  const [bestAuthor, nBlogs] = _.maxBy(Object.entries(blogsByAuthor), (obj) => obj[1])
+  return {
+    author: bestAuthor,
+    blogs: nBlogs
+  }
+}
+
+const mostLikes = (blogs) => {
+  if (blogs.length === 0) {
+    return null
+  }
+  const bestAuthor = _(blogs)
+    .groupBy('author')
+    .map((authorBlogs, authorName) => ({ 'author': authorName, 'likes': _.sumBy(authorBlogs, 'likes') }))
+    .maxBy('likes')
+  return bestAuthor
 }
 
 module.exports = {
