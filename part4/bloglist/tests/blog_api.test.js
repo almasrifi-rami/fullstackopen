@@ -104,6 +104,39 @@ describe('blog title and url must exist', () => {
   })
 })
 
+test('blog is deleted', async () => {
+  const blogsAtStart = await helper.blogsInDb()
+  blogToDelete = blogsAtStart[0]
+
+  await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
+
+  const blogsAtEnd = await helper.blogsInDb()
+  
+  const titles = blogsAtEnd.map(b => b.title)
+  assert(!titles.includes(blogToDelete.title))
+
+  assert.strictEqual(blogsAtEnd.length, blogsAtStart.length - 1)
+})
+
+test('blog is updated', async () => {
+  const blogsAtStart = await helper.blogsInDb()
+  const blogToUpdate = blogsAtStart[0]
+
+  blogToUpdate.likes = 10
+
+  await api
+    .put(`/api/blogs/${blogToUpdate.id}`)
+    .send(blogToUpdate)
+    .expect(200)
+
+  const blogsAtEnd = await helper.blogsInDb()
+  
+  const updatedBlog = blogsAtEnd.find(b => b.id === blogToUpdate.id)
+  assert.deepStrictEqual(updatedBlog, blogToUpdate)
+  
+  assert.strictEqual(blogsAtStart.length, blogsAtEnd.length)
+})
+
 
 after(async () => {
   await mongoose.connection.close()
