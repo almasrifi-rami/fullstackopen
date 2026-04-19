@@ -2,8 +2,9 @@ POST http://localhost:3003/api/blogs
 Content-Type: application/json
 
 {
-  "title": "cool blog 2",
-  "author": "cool author",
-  "url": "cool_url/cool_url.com",
-  "likes": 6
+  "title": "Type wars",
+  "author": "Robert C. Martin",
+  "url": "http://blog.cleancoder.com/uncle-bob/2016/05/01/TypeWars.html",
+  "likes": 2,
+  "userId": "69e50e50045818cfbfd8ca0c"
 }

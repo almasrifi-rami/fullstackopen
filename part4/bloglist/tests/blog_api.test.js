@@ -5,12 +5,25 @@ const supertest = require('supertest')
 const app = require('../app')
 const helper = require('./test_helper')
 const Blog = require('../models/blog')
+const User = require('../models/user')
+const bcrypt = require('bcrypt')
 
 const api = supertest(app)
 
 beforeEach(async () => {
   await Blog.deleteMany({})
-  await Blog.insertMany(helper.initialBlogs)
+  await User.deleteMany({})
+
+  const passwordHash = await bcrypt.hash('sekret', 10)
+  const user = new User({ username: 'root', passwordHash })
+  await user.save()
+
+  const initialBlogsWithUser = helper.initialBlogs.map(blog => ({
+    ...blog,
+    user: user._id
+  }))
+
+  await Blog.insertMany(initialBlogsWithUser)
 })
 
 test('blogs are returned as json', async () => {
@@ -35,11 +48,15 @@ test('unique identifier property is named id', async () => {
 })
 
 test('blog can be added to the database', async () => {
+  const users = await helper.usersInDb()
+  const user = users[0]
+
   const newBlog = {
     title: 'Go To Statement Considered Harmful',
     author: 'Edsger W. Dijkstra',
     url: 'https://homepages.cwi.nl/~storm/teaching/reader/Dijkstra68.pdf',
-    likes: 5
+    likes: 5,
+    userId: user.id
   }
 
   await api
@@ -56,10 +73,14 @@ test('blog can be added to the database', async () => {
 })
 
 test('blog likes default to zero', async () => {
+  const users = await helper.usersInDb()
+  const user = users[0]
+
   const blogWithoutLikes = {
     title: 'Go To Statement Considered Harmful',
     author: 'Edsger W. Dijkstra',
-    url: 'https://homepages.cwi.nl/~storm/teaching/reader/Dijkstra68.pdf'
+    url: 'https://homepages.cwi.nl/~storm/teaching/reader/Dijkstra68.pdf',
+    userId: user.id
   }
 
   await api
@@ -85,7 +106,7 @@ describe('blog title and url must exist', () => {
     await api
       .post('/api/blogs')
       .send(blogWithoutTitle)
-      .expect(422)
+      .expect(400)
       .expect('Content-Type', /application\/json/)
   })
 
@@ -99,14 +120,14 @@ describe('blog title and url must exist', () => {
     await api
       .post('/api/blogs')
       .send(blogWithoutUrl)
-      .expect(422)
+      .expect(400)
       .expect('Content-Type', /application\/json/)
   })
 })
 
 test('blog is deleted', async () => {
   const blogsAtStart = await helper.blogsInDb()
-  blogToDelete = blogsAtStart[0]
+  const blogToDelete = blogsAtStart[0]
 
   await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
 
@@ -136,7 +157,6 @@ test('blog is updated', async () => {
   
   assert.strictEqual(blogsAtStart.length, blogsAtEnd.length)
 })
-
 
 after(async () => {
   await mongoose.connection.close()
