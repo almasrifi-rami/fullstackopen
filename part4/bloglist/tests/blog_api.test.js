@@ -10,6 +10,8 @@ const bcrypt = require('bcrypt')
 
 const api = supertest(app)
 
+let token
+
 beforeEach(async () => {
   await Blog.deleteMany({})
   await User.deleteMany({})
@@ -24,6 +26,12 @@ beforeEach(async () => {
   }))
 
   await Blog.insertMany(initialBlogsWithUser)
+
+  const response = await api
+    .post('/api/login')
+    .send({ username: 'root', password: 'sekret' })
+
+  token = response.body.token
 })
 
 test('blogs are returned as json', async () => {
@@ -61,6 +69,7 @@ test('blog can be added to the database', async () => {
 
   await api
     .post('/api/blogs')
+    .set('Authorization', `Bearer ${token}`)
     .send(newBlog)
     .expect(201)
     .expect('Content-Type', /application\/json/)
@@ -85,6 +94,7 @@ test('blog likes default to zero', async () => {
 
   await api
     .post('/api/blogs')
+    .set('Authorization', `Bearer ${token}`)
     .send(blogWithoutLikes)
     .expect(201)
     .expect('Content-Type', /application\/json/)
@@ -105,8 +115,9 @@ describe('blog title and url must exist', () => {
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(blogWithoutTitle)
-      .expect(400)
+      .expect(422)
       .expect('Content-Type', /application\/json/)
   })
 
@@ -119,8 +130,9 @@ describe('blog title and url must exist', () => {
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(blogWithoutUrl)
-      .expect(400)
+      .expect(422)
       .expect('Content-Type', /application\/json/)
   })
 })
@@ -129,7 +141,7 @@ test('blog is deleted', async () => {
   const blogsAtStart = await helper.blogsInDb()
   const blogToDelete = blogsAtStart[0]
 
-  await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
+  await api.delete(`/api/blogs/${blogToDelete.id}`).set('Authorization', `Bearer ${token}`).expect(204)
 
   const blogsAtEnd = await helper.blogsInDb()
   
@@ -156,6 +168,28 @@ test('blog is updated', async () => {
   assert.deepStrictEqual(updatedBlog, blogToUpdate)
   
   assert.strictEqual(blogsAtStart.length, blogsAtEnd.length)
+})
+
+test('blog cannot be added if the user is not authorized', async () => {
+  const users = await helper.usersInDb()
+  const user = users[0]
+
+  const newBlog = {
+    title: 'Go To Statement Considered Harmful',
+    author: 'Edsger W. Dijkstra',
+    url: 'https://homepages.cwi.nl/~storm/teaching/reader/Dijkstra68.pdf',
+    likes: 5,
+    userId: user.id
+  }
+
+  await api
+    .post('/api/blogs')
+    .send(newBlog)
+    .expect(401)
+    .expect('Content-Type', /application\/json/)
+
+  const blogsAtEnd = await helper.blogsInDb()
+  assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
 })
 
 after(async () => {
