@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Blog from './components/Blog'
+import Notification from './components/Notification'
 import blogService from './services/blogs'
 import loginService from './services/login'
 
@@ -8,6 +9,7 @@ const App = () => {
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [url, setUrl] = useState('')
+  const [notification, setNotification] = useState(null)
   const [errorMessage, setErrorMessage] = useState(null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -41,8 +43,8 @@ const App = () => {
       setUser(user)
       setUsername('')
       setPassword('')
-    } catch {
-      setErrorMessage('wrong credentials')
+    } catch (error) {
+      setErrorMessage(error.response.data.error)
       setTimeout(() => {
         setErrorMessage(null)
       }, 5000)
@@ -54,18 +56,33 @@ const App = () => {
 
     setUser(null)
     blogService.setToken('')
+    setTitle('')
+    setAuthor('')
+    setUrl('')
     window.localStorage.removeItem('loggedUser')
   }
 
   const handleCreate = async event => {
     event.preventDefault()
 
-    const blog = await blogService.create({ title, author, url })
-    setTitle('')
-    setAuthor('')
-    setUrl('')
+    try {
+      const blog = await blogService.create({ title, author, url })
+      setTitle('')
+      setAuthor('')
+      setUrl('')
 
-    setBlogs(blogs.concat(blog))
+      setBlogs(blogs.concat(blog))
+
+      setNotification(`a new blog ${blog.title} by ${blog.author} added`)
+      setTimeout(() => {
+        setNotification(null)
+      }, 5000)
+    } catch (error) {
+      setErrorMessage(error.response.data.error)
+      setTimeout(() => {
+        setErrorMessage('')
+      }, 5000)
+    }
   }
 
   const loginForm = () => (
@@ -86,7 +103,7 @@ const App = () => {
           <label>
             password
             <input
-              type="text"
+              type="password"
               value={password}
               onChange={({ target }) => setPassword(target.value)}
             />
@@ -113,6 +130,7 @@ const App = () => {
             <input
               type="text"
               value={title}
+              required
               onChange={({ target }) => setTitle(target.value)}
             />
           </label>
@@ -133,6 +151,7 @@ const App = () => {
             <input
               type="text"
               value={url}
+              required
               onChange={({ target }) => setUrl(target.value)}
             />
           </label>
@@ -145,7 +164,8 @@ const App = () => {
   return (
     <div>
       <h1>blogs</h1>
-      <h2>{errorMessage}</h2>
+      <Notification message={notification} type="success" />
+      <Notification message={errorMessage} type="error" />
 
       {!user && loginForm()}
       {user && (
