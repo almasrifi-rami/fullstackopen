@@ -71,8 +71,27 @@ const App = () => {
     } catch (error) {
       setErrorMessage(error.response.data.error)
       setTimeout(() => {
-        setErrorMessage('')
+        setErrorMessage(null)
       }, 5000)
+    }
+  }
+
+  const addLike = async blogObject => {
+    try {
+      const updatedBlog = { ...blogObject, likes: blogObject.likes + 1, user: blogObject.user.id }
+      await blogService.update(blogObject.id, updatedBlog)
+
+      setBlogs(blogs.map(blog => blog.id === updatedBlog.id ? updatedBlog : blog))
+
+      setNotification(`blog ${blog.title} by ${blog.author} was liked`)
+      setTimeout(() => {
+        setNotification(null)
+      }, 5000)
+    } catch (error) {
+      setErrorMessage(error.response.data.error)
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000);
     }
   }
 
@@ -94,7 +113,7 @@ const App = () => {
           <Togglable buttonLabel="create new blog" ref={blogFormRef}>
             <BlogForm createBlog={addBlog} />
           </Togglable>
-          <BlogList blogs={blogs} />
+          <BlogList blogs={blogs} blogLike={addLike} />
         </div>
       )}
     </div>
