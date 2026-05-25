@@ -83,7 +83,6 @@ const App = () => {
         likes: blogObject.likes + 1,
         user: blogObject.user.id
       })
-      console.log(updatedBlog)
 
       setBlogs(blogs.map(blog => blog.id === updatedBlog.id ? updatedBlog : blog))
 
@@ -92,7 +91,27 @@ const App = () => {
         setNotification(null)
       }, 5000)
     } catch (error) {
-      setErrorMessage(error.response)
+      setErrorMessage(error.response.data.error)
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000)
+    }
+  }
+
+  const removeBlog = async blogObject => {
+    try {
+      if (window.confirm(`Remove blog ${blogObject.title} by ${blogObject.author}`)) {
+        await blogService.remove(blogObject.id)
+        setBlogs(blogs.filter(blog => blog.id !== blogObject.id))
+
+        setNotification(`blog ${blogObject.title} by ${blogObject.author} was deleted`)
+        setTimeout(() => {
+          setNotification(null)
+        }, 5000)
+      }
+
+    } catch (error) {
+      setErrorMessage(error.response.data.error)
       setTimeout(() => {
         setErrorMessage(null)
       }, 5000)
@@ -117,7 +136,7 @@ const App = () => {
           <Togglable buttonLabel="create new blog" ref={blogFormRef}>
             <BlogForm createBlog={addBlog} />
           </Togglable>
-          <BlogList blogs={blogs} blogLike={addLike} />
+          <BlogList blogs={blogs} blogLike={addLike} blogDelete={removeBlog} />
         </div>
       )}
     </div>
