@@ -78,20 +78,24 @@ const App = () => {
 
   const addLike = async blogObject => {
     try {
-      const updatedBlog = { ...blogObject, likes: blogObject.likes + 1, user: blogObject.user.id }
-      await blogService.update(blogObject.id, updatedBlog)
+      const updatedBlog = await blogService.update(blogObject.id, {
+        ...blogObject,
+        likes: blogObject.likes + 1,
+        user: blogObject.user.id
+      })
+      console.log(updatedBlog)
 
       setBlogs(blogs.map(blog => blog.id === updatedBlog.id ? updatedBlog : blog))
 
-      setNotification(`blog ${blog.title} by ${blog.author} was liked`)
+      setNotification(`blog ${updatedBlog.title} by ${updatedBlog.author} was liked`)
       setTimeout(() => {
         setNotification(null)
       }, 5000)
     } catch (error) {
-      setErrorMessage(error.response.data.error)
+      setErrorMessage(error.response)
       setTimeout(() => {
         setErrorMessage(null)
-      }, 5000);
+      }, 5000)
     }
   }
 
